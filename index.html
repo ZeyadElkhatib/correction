@@ -40,19 +40,19 @@ select,input[type=text]{background:var(--card);color:var(--ink);border:1px solid
 <!-- مسح الورقة بالكاميرا -->
 <section class="card p-3 space-y-3">
   <h2 class="font-extrabold text-lg">امسح ورقة الطالب</h2>
-  <div class="relative rounded-xl overflow-hidden bg-black mx-auto" style="aspect-ratio:3/4;max-height:72vh">
+  <div class="relative rounded-xl overflow-hidden bg-black mx-auto" style="aspect-ratio:3/4;max-height:50vh">
     <video id="vid" playsinline muted autoplay class="w-full h-full object-cover"></video>
     <div class="absolute inset-3 rounded-xl pointer-events-none" id="guide" style="border:4px dashed rgba(255,255,255,.75)"></div>
     <div id="camMsg" class="absolute bottom-0 inset-x-0 p-2 text-center text-white font-bold" style="background:rgba(0,0,0,.6)">جاري تشغيل الكاميرا...</div>
-    <div id="big" class="hidden absolute inset-0 flex flex-col items-center justify-center gap-2 text-white text-center p-4" style="background:rgba(8,38,22,.93)">
-      <div class="text-lg font-bold">نموذج <span id="bigForm" class="ltr inline-block"></span></div>
-      <div class="text-sm opacity-80">الطالب جاب <span id="bigNo"></span></div>
-      <div class="font-extrabold" id="bigScore" style="font-size:3.6rem;line-height:1.1"></div>
-      <div id="bigPct" class="text-lg font-bold"></div>
-      <div id="bigWarn" class="text-sm rounded-lg px-3 py-1 warn hidden"></div>
-      <button class="btn mt-3 text-xl px-10" id="again" style="background:#fff;color:#0f5a38">التالي ◀</button>
-      <a href="#result" class="text-sm underline opacity-90" id="details">عرض التفاصيل</a>
-    </div>
+  </div>
+  <div id="big" class="hidden rounded-xl p-4 text-center space-y-1" style="background:var(--pri);color:var(--priInk)">
+    <div class="text-sm opacity-90">نموذج <span id="bigForm" class="ltr inline-block font-bold"></span> — <span id="bigNo"></span></div>
+    <div class="text-lg font-bold">الطالب جاب</div>
+    <div class="font-extrabold" id="bigScore" style="font-size:3.4rem;line-height:1.1"></div>
+    <div id="bigPct" class="font-bold"></div>
+    <div id="bigWarn" class="text-sm rounded-lg px-3 py-1 warn hidden"></div>
+    <div class="pt-2"><button class="btn text-xl px-10" id="again" style="background:#fff;color:#0f5a38">التالي ◀</button></div>
+    <a href="#result" class="text-sm underline opacity-90 block" id="details">عرض التفاصيل</a>
   </div>
   <div class="flex flex-wrap gap-2 justify-center items-center">
     <button class="btn2" id="startCam">تشغيل الكاميرا</button>
@@ -172,7 +172,7 @@ const PROMPT = `الصورة المرفقة هي ورقة إجابة (Bubble She
 {"form":"A","answers":["A","C","",...23 عنصراً],"notes":"ملاحظة قصيرة إن كانت الصورة غير واضحة أو فيه شك في أسئلة معينة"}`;
 
 async function analyze(blob){
-  busy = true; msg('تم الالتقاط — جاري قراءة الورقة...'); $('status').textContent='';
+  busy = true; msg('جاري قراءة الورقة...'); $('status').textContent='جاري قراءة الورقة...';
   try{
     const sm = await samplePromise; if(!sm) throw {code:'none'};
     const r = await sm.json(PROMPT, { images: blob, modelTier:'default', cache:false });
@@ -181,12 +181,13 @@ async function analyze(blob){
     state.stu = a; state.form = (String(r.form).toUpperCase()==='B')?'B':'A';
     $('formNote').textContent = r.notes ? 'ملاحظة: '+r.notes : '';
     session.push({form:state.form, score:0}); cur = session.length-1;
-    show(); $('big').classList.remove('hidden'); needGap = true;
+    show(); $('big').classList.remove('hidden'); needGap = true; $('status').textContent=''; msg('تمت القراءة ✓ — اضغط التالي للورقة اللي بعدها');
     if(navigator.vibrate) navigator.vibrate(120);
   }catch(e){
-    busy = false; needGap = true; prev = null; still = 0;
-    const m = e.code==='not_granted' ? 'لم يتم السماح باستخدام Claude' : e.code==='rate_limited' ? 'محاولات كثيرة، انتظر قليلاً' : e.code==='none' ? 'تعذر الاتصال، أعد تحميل الصفحة' : 'تعذرت القراءة — قرّب الكاميرا وثبّتها وسأعيد المحاولة';
-    msg(m);
+    busy=false; prev=null; still=0; seen=0; armed=false; if(e.code!=='not_granted'&&e.code!=='none') setTimeout(()=>{armed=true},4000); else setTimeout(()=>{armed=true},20000);
+    const m = e.code==='not_granted' ? 'لم يتم السماح باستخدام Claude — اسمح بذلك ثم أعد المحاولة' : e.code==='rate_limited' ? 'محاولات كثيرة، انتظر قليلاً' : e.code==='none' ? 'تعذر الاتصال، أعد تحميل الصفحة' : 'تعذرت قراءة الورقة، سأعيد المحاولة';
+    $('status').textContent = '⚠ '+m+(e&&e.message&&e.code!=='none'?' ('+e.message+')':'');
+    msg('فشلت القراءة — ثبّت الورقة وسأعيد المحاولة');
   }
 }
 
@@ -221,7 +222,7 @@ function tick(){
 $('snap').onclick = async () => { if(busy||!$('vid').videoWidth) return; analyze(await frameBlob()); };
 $('startCam').onclick = startCam;
 $('file').onchange = e => { const f=e.target.files[0]; if(f) analyze(f); e.target.value=''; };
-$('again').onclick = () => { cur=-1; $('big').classList.add('hidden'); busy=false; prev=null; still=0; needGap=true; msg('ضع الورقة التالية'); };
+$('again').onclick = () => { cur=-1; $('status').textContent=''; $('big').classList.add('hidden'); busy=false; prev=null; still=0; needGap=true; msg('ضع الورقة التالية'); };
 $('details').onclick = e => { e.preventDefault(); $('result').scrollIntoView({behavior:'smooth'}); };
 $('manual').onclick = () => { state.stu=Array(N).fill(''); $('formNote').textContent=''; show(); $('result').scrollIntoView({behavior:'smooth'}); };
 window.addEventListener('load', startCam);
