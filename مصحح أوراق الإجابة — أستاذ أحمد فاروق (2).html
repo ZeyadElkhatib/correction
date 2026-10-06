@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مصحح أوراق الإجابة — أستاذ أحمد فاروق</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f7f4;--card:#fff;--ink:#14281d;--mut:#5d7366;--line:#d6e2da;--pri:#0f5a38;--priInk:#fff;--ok:#0f7a45;--okBg:#e1f5e9;--bad:#c4281f;--badBg:#fde8e6;--warn:#9a6a00;--warnBg:#fff3d1;--chip:#eef4f0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1511;--card:#17211b;--ink:#e8f1ea;--mut:#9bb2a3;--line:#2a3b31;--pri:#2fa86b;--priInk:#06140c;--ok:#5fd394;--okBg:#12301f;--bad:#ff8a80;--badBg:#3a1815;--warn:#f2c250;--warnBg:#33290d;--chip:#1e2b23}}
+:root[data-theme="dark"]{--bg:#0e1511;--card:#17211b;--ink:#e8f1ea;--mut:#9bb2a3;--line:#2a3b31;--pri:#2fa86b;--priInk:#06140c;--ok:#5fd394;--okBg:#12301f;--bad:#ff8a80;--badBg:#3a1815;--warn:#f2c250;--warnBg:#33290d;--chip:#1e2b23}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font-family:'Cairo',Tahoma,Arial,sans-serif;min-height:100vh}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px}
+.btn{background:var(--pri);color:var(--priInk);font-weight:700;border-radius:12px;padding:.7rem 1.2rem}
+.btn:disabled{opacity:.5}
+.btn2{background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.35rem .8rem;font-weight:600}
+.ltr{direction:ltr;unicode-bidi:isolate}
+.opt{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);color:var(--mut);font-weight:700;font-size:13px;direction:ltr}
+.opt.on{background:var(--pri);border-color:var(--pri);color:var(--priInk)}
+.tab{padding:.5rem 1.4rem;border-radius:10px;font-weight:800;border:1px solid var(--line);background:var(--chip);color:var(--mut)}
+.tab.on{background:var(--pri);color:var(--priInk);border-color:var(--pri)}
+select,input[type=text]{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:.35rem .6rem}
+.ok{background:var(--okBg);color:var(--ok)}.bad{background:var(--badBg);color:var(--bad)}.warn{background:var(--warnBg);color:var(--warn)}
+</style>
+</head>
+<body>
+<div class="max-w-4xl mx-auto p-4 space-y-4">
+
+<header class="card p-4 flex items-center justify-between gap-3" style="background:var(--pri);color:var(--priInk);border:none">
+  <div>
+    <h1 class="text-xl font-extrabold">مصحح أوراق الإجابة</h1>
+    <p class="text-sm opacity-90">أستاذ أحمد فاروق | امتحان فيزياء شامل — 23 سؤال</p>
+  </div>
+  <div class="text-3xl font-extrabold ltr" id="formBadge">A / B</div>
+</header>
+
+<!-- مسح الورقة بالكاميرا -->
+<section class="card p-3 space-y-3">
+  <h2 class="font-extrabold text-lg">امسح ورقة الطالب</h2>
+  <div class="relative rounded-xl overflow-hidden bg-black mx-auto" style="aspect-ratio:3/4;max-height:72vh">
+    <video id="vid" playsinline muted autoplay class="w-full h-full object-cover"></video>
+    <div class="absolute inset-3 rounded-xl pointer-events-none" id="guide" style="border:4px dashed rgba(255,255,255,.75)"></div>
+    <div id="camMsg" class="absolute bottom-0 inset-x-0 p-2 text-center text-white font-bold" style="background:rgba(0,0,0,.6)">جاري تشغيل الكاميرا...</div>
+    <div id="big" class="hidden absolute inset-0 flex flex-col items-center justify-center gap-2 text-white text-center p-4" style="background:rgba(8,38,22,.93)">
+      <div class="text-lg font-bold">نموذج <span id="bigForm" class="ltr inline-block"></span></div>
+      <div class="text-sm opacity-80">الطالب جاب <span id="bigNo"></span></div>
+      <div class="font-extrabold" id="bigScore" style="font-size:3.6rem;line-height:1.1"></div>
+      <div id="bigPct" class="text-lg font-bold"></div>
+      <div id="bigWarn" class="text-sm rounded-lg px-3 py-1 warn hidden"></div>
+      <button class="btn mt-3 text-xl px-10" id="again" style="background:#fff;color:#0f5a38">التالي ◀</button>
+      <a href="#result" class="text-sm underline opacity-90" id="details">عرض التفاصيل</a>
+    </div>
+  </div>
+  <div class="flex flex-wrap gap-2 justify-center items-center">
+    <button class="btn2" id="startCam">تشغيل الكاميرا</button>
+    <button class="btn2" id="snap">التقاط الآن (احتياطي)</button>
+    <label class="btn2 cursor-pointer">صورة من الجهاز / كاميرا الموبايل<input type="file" id="file" accept="image/*" capture="environment" class="hidden"></label>
+    <button class="btn2" id="manual">إدخال يدوي</button>
+  </div>
+  <p id="status" class="text-sm text-center" style="color:var(--mut)"></p>
+</section>
+
+<!-- 1. المفاتيح -->
+<section class="card p-4 space-y-3">
+  <h2 class="font-extrabold text-lg">مفتاح الإجابات الصحيحة (يُحفظ تلقائياً)</h2>
+  <div class="flex gap-2">
+    <button class="tab on" data-k="A">نموذج A</button>
+    <button class="tab" data-k="B">نموذج B</button>
+  </div>
+  <div class="flex flex-wrap gap-2 items-center">
+    <input type="text" id="paste" class="ltr flex-1 min-w-[220px]" placeholder="الصق المفتاح كاملاً: ABCDABCD... (23 حرف)" maxlength="60">
+    <button class="btn2" id="applyPaste">تطبيق</button>
+    <button class="btn2" id="clearKey">مسح المفتاح</button>
+  </div>
+  <div id="keyGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2"></div>
+  <p class="text-sm" style="color:var(--mut)" id="keyStat"></p>
+</section>
+
+<section id="sess" class="card p-4 space-y-2 hidden">
+  <div class="flex items-center justify-between"><h2 class="font-extrabold text-lg">الأوراق التي تم تصحيحها</h2><button class="btn2" id="sessCsv">حفظ الكل CSV</button></div>
+  <div id="sessAvg" class="text-sm" style="color:var(--mut)"></div>
+  <div id="sessList" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm"></div>
+</section>
+<!-- 3. النتيجة -->
+<section id="result" class="card p-4 space-y-4 hidden">
+  <h2 class="font-extrabold text-lg">تفاصيل النتيجة</h2>
+  <div class="flex flex-wrap items-center gap-3">
+    <label class="text-sm font-bold">النموذج المكتشف:</label>
+    <select id="formSel" class="ltr"><option>A</option><option>B</option></select>
+    <span id="formNote" class="text-sm" style="color:var(--mut)"></span>
+  </div>
+  <div class="flex flex-wrap items-end gap-6">
+    <div>
+      <div class="text-sm" style="color:var(--mut)">الدرجة</div>
+      <div class="text-5xl font-extrabold" id="score" style="color:var(--pri)"></div>
+    </div>
+    <div class="text-sm space-y-1" id="stats"></div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-center text-sm">
+      <thead><tr style="color:var(--mut)"><th class="p-2">س</th><th>إجابة الطالب</th><th>الصحيحة</th><th>الحالة</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div id="wrongList" class="text-sm"></div>
+  <div class="flex flex-wrap gap-2">
+    <button class="btn2" id="copy">نسخ النتيجة</button>
+    <button class="btn2" id="save">حفظ كملف CSV</button>
+  </div>
+  <p class="text-xs" style="color:var(--mut)">القراءة بالذكاء الاصطناعي قد تخطئ أحياناً — راجع الإجابات من الجدول وعدّل أي خانة بالقائمة المنسدلة وستتحدث الدرجة فوراً.</p>
+</section>
+</div>
+
+<script>
+const N = 23, L = ['A','B','C','D'];
+const state = { key:{A:Array(N).fill(''), B:Array(N).fill('')}, cur:'A', stu:Array(N).fill(''), form:'A', file:null };
+const $ = id => document.getElementById(id);
+
+// ---- حفظ المفاتيح محلياً (اختياري)
+try { const s = JSON.parse(localStorage.getItem('keys')||'null'); if (s) state.key = s; } catch(e){}
+const saveKeys = () => { try { localStorage.setItem('keys', JSON.stringify(state.key)); } catch(e){} };
+
+// ---- مفتاح الإجابات
+function renderKey(){
+  const k = state.key[state.cur];
+  $('keyGrid').innerHTML = k.map((v,i)=>`
+    <div class="flex items-center justify-between gap-1 rounded-lg px-2 py-1" style="background:var(--chip)">
+      <b class="w-6 text-center">${i+1}</b>
+      <div class="flex gap-1">${L.map(l=>`<button class="opt ${v===l?'on':''}" data-q="${i}" data-l="${l}">${l}</button>`).join('')}</div>
+    </div>`).join('');
+  const n = k.filter(Boolean).length;
+  $('keyStat').textContent = `تم إدخال ${n} من ${N} إجابة لنموذج ${state.cur}`;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.k===state.cur));
+}
+$('keyGrid').onclick = e => {
+  const b = e.target.closest('.opt'); if(!b) return;
+  const k = state.key[state.cur], q = +b.dataset.q;
+  k[q] = k[q]===b.dataset.l ? '' : b.dataset.l;
+  saveKeys(); renderKey(); grade();
+};
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{state.cur=t.dataset.k;renderKey();});
+$('applyPaste').onclick = () => {
+  const s = $('paste').value.toUpperCase().replace(/[^ABCD]/g,'').slice(0,N);
+  state.key[state.cur] = Array.from({length:N},(_,i)=>s[i]||'');
+  saveKeys(); renderKey(); grade();
+};
+$('clearKey').onclick = () => { state.key[state.cur]=Array(N).fill(''); saveKeys(); renderKey(); grade(); };
+
+// ---- قراءة الصور بواسطة Claude
+let sample=null, busy=false, armed=true, needGap=false, prev=null, still=0, timer=null, stream=null, cur=-1;
+const session=[];
+const msg = t => $('camMsg').textContent = t;
+const samplePromise = (async()=>{
+  try{
+    const s = await window.claude?.use('sample');
+    const lim = s ? await s.limits().catch(()=>null) : null;
+    if (s && lim?.images) sample = s;
+  }catch(e){}
+  return sample;
+})();
+
+const PROMPT = `الصورة المرفقة هي ورقة إجابة (Bubble Sheet) لامتحان فيزياء من 23 سؤالاً.
+- في أعلى الورقة مربع أحمر مكتوب فيه كلمة "نموذج" وتحتها حرف كبير A أو B: هذا هو النموذج.
+- الجدول: كل صف هو رقم سؤال (1 إلى 23) وفيه أربع دوائر. الورقة عربية (من اليمين لليسار) فترتيب الأعمدة من اليمين إلى اليسار هو: العمود الأقرب لرقم السؤال = A، ثم B، ثم C، وأقصى اليسار = D. اعتمد على عناوين الأعمدة المطبوعة (A B C D) أعلى الجدول.
+- الدائرة المظللة هي المعبأة بلون داكن/حبر. الدائرة الفارغة مجرد إطار.
+- قد يلغي الطالب دائرة ظللها بالخطأ بوضع علامة × أو شطب فوقها: الدائرة المشطوبة/عليها × تُعتبر ملغاة تماماً، تجاهلها كأنها غير مظللة.
+المطلوب: لكل سؤال أعد الحرف الذي اختاره الطالب بعد تجاهل الدوائر الملغاة بعلامة ×. فإن بقيت دائرة واحدة مظللة غير ملغاة فهي إجابته. استخدم "" إذا لم يظلل شيئاً (أو ألغى كل ما ظلله)، واستخدم "M" فقط إذا بقيت دائرتان أو أكثر مظللتين وغير ملغاتين بعلامة ×.
+أعد JSON فقط بدون أي نص آخر بهذا الشكل بالضبط:
+{"form":"A","answers":["A","C","",...23 عنصراً],"notes":"ملاحظة قصيرة إن كانت الصورة غير واضحة أو فيه شك في أسئلة معينة"}`;
+
+async function analyze(blob){
+  busy = true; msg('تم الالتقاط — جاري قراءة الورقة...'); $('status').textContent='';
+  try{
+    const sm = await samplePromise; if(!sm) throw {code:'none'};
+    const r = await sm.json(PROMPT, { images: blob, modelTier:'default', cache:false });
+    const a = (r.answers||[]).slice(0,N).map(x=>{x=String(x||'').toUpperCase().trim(); return L.includes(x)?x:(x==='M'?'M':'');});
+    while(a.length<N) a.push('');
+    state.stu = a; state.form = (String(r.form).toUpperCase()==='B')?'B':'A';
+    $('formNote').textContent = r.notes ? 'ملاحظة: '+r.notes : '';
+    session.push({form:state.form, score:0}); cur = session.length-1;
+    show(); $('big').classList.remove('hidden'); needGap = true;
+    if(navigator.vibrate) navigator.vibrate(120);
+  }catch(e){
+    busy = false; needGap = true; prev = null; still = 0;
+    const m = e.code==='not_granted' ? 'لم يتم السماح باستخدام Claude' : e.code==='rate_limited' ? 'محاولات كثيرة، انتظر قليلاً' : e.code==='none' ? 'تعذر الاتصال، أعد تحميل الصفحة' : 'تعذرت القراءة — قرّب الكاميرا وثبّتها وسأعيد المحاولة';
+    msg(m);
+  }
+}
+
+// ---- الكاميرا والالتقاط التلقائي
+const cv = document.createElement('canvas'), cx = cv.getContext('2d',{willReadFrequently:true});
+async function startCam(){
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}},audio:false});
+    $('vid').srcObject = stream; await $('vid').play();
+    msg('ضع الكاميرا فوق الورقة وثبّتها'); $('startCam').classList.add('hidden');
+    clearInterval(timer); timer = setInterval(tick, 250);
+  }catch(e){ msg('تعذر تشغيل الكاميرا — اضغط "صورة من الجهاز / كاميرا الموبايل"'); }
+}
+function frameBlob(){
+  const v=$('vid'), sc=Math.min(1, 1600/Math.max(v.videoWidth,v.videoHeight));
+  cv.width=v.videoWidth*sc; cv.height=v.videoHeight*sc; cx.drawImage(v,0,0,cv.width,cv.height);
+  return new Promise(res=>cv.toBlob(res,'image/jpeg',0.9));
+}
+let seen=0;
+function tick(){
+  const v=$('vid'); if(busy||!armed||!v.videoWidth) return;
+  const w=32,h=Math.max(8,Math.round(32*v.videoHeight/v.videoWidth)); cv.width=w; cv.height=h; cx.drawImage(v,0,0,w,h);
+  const d=cx.getImageData(0,0,w,h).data, n=w*h, g=new Uint8Array(n); let diff=0, red=0;
+  for(let i=0;i<n;i++){const r=d[i*4],gg=d[i*4+1],b=d[i*4+2]; g[i]=(r+gg+b)/3; if(r>120&&r>gg*1.7&&r>b*1.7) red++; if(prev) diff+=Math.abs(g[i]-prev[i]);}
+  const moving = prev ? diff/n>12 : false; prev=g;
+  if(red/n < 0.002){ still=0; seen=0; needGap=false; msg('وجّه الكاميرا على الورقة...'); return; }
+  if(needGap){ msg('أبعد الورقة السابقة ثم ضع الجديدة'); return; }
+  seen++; if(moving) still=Math.max(0,still-1); else still++;
+  if(still>=3 || seen>=10){ still=0; seen=0; msg('جاري الالتقاط...'); $('snap').click(); }
+  else msg(moving ? 'قرّب وثبّت الموبايل شوية...' : 'ثابت... ثانية واحدة');
+}
+$('snap').onclick = async () => { if(busy||!$('vid').videoWidth) return; analyze(await frameBlob()); };
+$('startCam').onclick = startCam;
+$('file').onchange = e => { const f=e.target.files[0]; if(f) analyze(f); e.target.value=''; };
+$('again').onclick = () => { cur=-1; $('big').classList.add('hidden'); busy=false; prev=null; still=0; needGap=true; msg('ضع الورقة التالية'); };
+$('details').onclick = e => { e.preventDefault(); $('result').scrollIntoView({behavior:'smooth'}); };
+$('manual').onclick = () => { state.stu=Array(N).fill(''); $('formNote').textContent=''; show(); $('result').scrollIntoView({behavior:'smooth'}); };
+window.addEventListener('load', startCam);
+
+// ---- التصحيح والعرض
+function show(){ $('result').classList.remove('hidden'); $('formSel').value=state.form; grade(); }
+$('formSel').onchange = e => { state.form=e.target.value; grade(); };
+
+function grade(){
+  if($('result').classList.contains('hidden')) return;
+  const key = state.key[state.form];
+  $('formBadge').textContent = state.form;
+  let right=0, wrong=0, blank=0, unkeyed=0; const bad=[];
+  $('rows').innerHTML = state.stu.map((s,i)=>{
+    const k = key[i]; let st, cls;
+    if(!k){ st='بدون مفتاح'; cls='warn'; unkeyed++; }
+    else if(s===k){ st='صحيحة'; cls='ok'; right++; }
+    else if(s===''){ st='لم يجب'; cls='bad'; blank++; bad.push(i+1); }
+    else if(s==='M'){ st='تظليل مزدوج (خطأ)'; cls='bad'; wrong++; bad.push(i+1); }
+    else { st='خطأ'; cls='bad'; wrong++; bad.push(i+1); }
+    return `<tr style="border-top:1px solid var(--line)"><td class="p-2 font-bold">${i+1}</td>
+      <td><select class="ltr" data-i="${i}"><option value="">—</option>${L.map(l=>`<option ${s===l?'selected':''}>${l}</option>`).join('')}<option value="M" ${s==='M'?'selected':''}>مزدوج</option></select></td>
+      <td class="ltr font-bold">${k||'—'}</td><td><span class="px-2 py-1 rounded-lg text-xs font-bold ${cls}">${st}</span></td></tr>`;
+  }).join('');
+  $('score').textContent = `${right} من ${N}`;
+  $('bigForm').textContent = state.form; $('bigScore').textContent = `${right} من ${N}`; $('bigPct').textContent = Math.round(right/N*100)+'%';
+  if(cur>=0){ session[cur].form=state.form; session[cur].score=right; $('bigNo').textContent=`(ورقة رقم ${cur+1})`; renderSession(); }
+  const bw=$('bigWarn'); bw.classList.toggle('hidden', !unkeyed); bw.textContent = unkeyed ? `مفتاح نموذج ${state.form} ناقص (${unkeyed} سؤال) — أكمله بالأسفل` : '';
+  $('stats').innerHTML = `<div>الإجابات الصحيحة: <b>${right}</b></div><div>الخاطئة: <b>${wrong}</b></div><div>غير المجابة: <b>${blank}</b></div><div>النسبة: <b>${Math.round(right/N*100)}%</b></div>`
+    + (unkeyed?`<div class="warn rounded px-2">${unkeyed} سؤال بدون مفتاح — أكمل مفتاح نموذج ${state.form}</div>`:'');
+  $('wrongList').innerHTML = bad.length ? `<b>الأسئلة التي أخطأ فيها أو تركها:</b> <span class="ltr">${bad.join('، ')}</span>` : (unkeyed?'':'<b style="color:var(--ok)">ممتاز! كل الإجابات صحيحة.</b>');
+}
+$('rows').onchange = e => { const s=e.target.closest('select'); if(!s) return; state.stu[+s.dataset.i]=s.value; grade(); };
+
+function renderSession(){
+  $('sess').classList.toggle('hidden', !session.length);
+  $('sessList').innerHTML = session.map((r,i)=>`<div class="rounded-lg px-3 py-2 flex justify-between" style="background:var(--chip)"><b>#${i+1} <span class="ltr inline-block">(${r.form})</span></b><b>${r.score} من ${N}</b></div>`).reverse().join('');
+  const avg = session.reduce((a,r)=>a+r.score,0)/session.length;
+  $('sessAvg').textContent = `عدد الأوراق: ${session.length} — المتوسط: ${avg.toFixed(1)} من ${N}`;
+}
+$('sessCsv').onclick = async () => {
+  const csv='\ufeffNo,Form,Score,Out of\n'+session.map((r,i)=>`${i+1},${r.form},${r.score},${N}`).join('\n');
+  try{ const d=await window.claude?.use('downloads'); if(d){ await d.save({filename:'all-results.csv',data:csv}); return; } }catch(e){}
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='all-results.csv'; a.click();
+};
+// ---- نسخ وحفظ
+const summary = () => {
+  const key=state.key[state.form]; const r=state.stu.filter((s,i)=>key[i]&&s===key[i]).length;
+  const bad=state.stu.map((s,i)=>(key[i]&&s!==key[i])?i+1:null).filter(Boolean);
+  return `نموذج ${state.form} — الدرجة: ${r} من ${N}` + (bad.length?`\nأخطأ في الأسئلة: ${bad.join('، ')}`:'');
+};
+$('copy').onclick = async () => { try{ await navigator.clipboard.writeText(summary()); $('copy').textContent='تم النسخ ✓'; setTimeout(()=>$('copy').textContent='نسخ النتيجة',1500);}catch(e){ prompt('انسخ النتيجة:', summary()); } };
+$('save').onclick = async () => {
+  const key=state.key[state.form];
+  const csv = '\ufeffQ,Student,Correct,Result\n'+state.stu.map((s,i)=>`${i+1},${s},${key[i]},${s===key[i]?1:0}`).join('\n');
+  try{
+    const d = await window.claude?.use('downloads');
+    if(d){ await d.save({filename:`result-form-${state.form}.csv`, data:csv}); return; }
+  }catch(e){}
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`result-form-${state.form}.csv`; a.click();
+};
+
+renderKey();
+</script>
+</body>
+</html>
